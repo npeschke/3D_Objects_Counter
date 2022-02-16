@@ -720,8 +720,9 @@ public class Counter3D {
      * <li>B-width, B-height and B-depth: current object's bounding box dimensions.</li>
      * </ul>
      * @param newRT should be false if the result window is to be named "Results", allowing use of "Analyze/Distribution" and "Analyze/Summarize". If true, the window will be named "Statistics for "+image title.
+     * @return the ResultsTable object
      */
-    public void showStatistics(boolean newRT){
+    public ResultsTable showStatistics(boolean newRT){
         if (!getObjects) getObjects();
         float calXYZ=(float) (cal.pixelWidth*cal.pixelHeight*cal.pixelDepth);
         String unit=cal.getUnit();
@@ -789,6 +790,7 @@ public class Counter3D {
         }else{
             rt.show("Results");
         }
+        return rt;
     }
     
     /** Returns a summary containing the image name and the number of retrieved objects including the set filter size and threshold.
