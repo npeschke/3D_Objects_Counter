@@ -785,11 +785,11 @@ public class Counter3D {
             
         }
         
-        if (newRT){
-            rt.show("Statistics for "+title);
-        }else{
-            rt.show("Results");
-        }
+//        if (newRT){
+//            rt.show("Statistics for "+title);
+//        }else{
+//            rt.show("Results");
+//        }
         return rt;
     }
     
