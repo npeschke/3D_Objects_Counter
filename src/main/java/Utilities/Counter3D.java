@@ -4,7 +4,7 @@
  * Created on 7 novembre 2007, 11:54
  *
  * Copyright (C) 2007 Fabrice P. Cordelieres
- *  
+ *
  * License:
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+
  */
 
 package Utilities;
@@ -54,45 +54,54 @@ public class Counter3D {
     float[][] centreOfMass, centroid;
     boolean sizeFilter=true, exclude=false, redirect=false, closeImg=Prefs.get("3D-OC-Options_closeImg.boolean", false), showMaskedImg=Prefs.get("3D-OC-Options_showMaskedImg.boolean", true);
     Vector<Object3D> obj;
-    
+
     boolean foundObjects=false, getObjects=false, getCentreOfMass=false, getCentroid=false, getSurfList=false, getSurfCoord=false;
-    
-    
+
+
     /**
      * Creates a new instance of Counter3D.
      *
-     * @param img specifies the image to convert into an Counter3D.
-     * @param thr specifies the threshold value (should be an Integer).
-     * @param min specifies the MIN size threshold to be used (should be an Integer).
-     * @param max specifies the MAX size threshold to be used (should be an Integer).
-     * @param exclude specifies if the objects on the edges should be excluded (should be a boolean).
+     * @param img      specifies the image to convert into an Counter3D.
+     * @param thr      specifies the threshold value (should be an Integer).
+     * @param min      specifies the MIN size threshold to be used (should be an Integer).
+     * @param max      specifies the MAX size threshold to be used (should be an Integer).
+     * @param exclude  specifies if the objects on the edges should be excluded (should be a boolean).
      * @param redirect specifies if intensities measurements should be redirected to another image defined within the options window (should be a boolean).
      */
-     public Counter3D(ImagePlus img, int thr, int min, int max, boolean exclude, boolean redirect) {
-        width=img.getWidth();
-        height=img.getHeight();
-        nbSlices=img.getNSlices();
-        length=width*height*nbSlices;
-        depth=img.getBitDepth();
-        title=img.getTitle();
-        cal=img.getCalibration();
-        this.thr=thr;
-        minSize=min;
-        maxSize=max;
-        sizeFilter=true;
-        this.exclude=exclude;
-        this.redirect=redirect;
-        
-        if (depth!=8 && depth!=16) throw new IllegalArgumentException("Counter3D class expects 8- or 16-bits images only");
-         
-        nbObj=length;
-        
-        imgArray=new int[length];
-        
+    public Counter3D(ImagePlus img, int thr, int min, int max, boolean exclude, boolean redirect) {
+        width = img.getWidth();
+        height = img.getHeight();
+        nbSlices = img.getNSlices();
+        length = width * height * nbSlices;
+        depth = img.getBitDepth();
+        title = img.getTitle();
+        cal = img.getCalibration();
+        this.thr = thr;
+        minSize = min;
+        maxSize = max;
+        sizeFilter = true;
+        this.exclude = exclude;
+        this.redirect = redirect;
+
+        if (depth != 8 && depth != 16)
+            throw new IllegalArgumentException("Counter3D class expects 8- or 16-bits images only");
+
+        nbObj = length;
+
+        try {
+            assert length > 0;
+            assert length < Integer.MAX_VALUE - 8;
+        } catch (Exception e) {
+            System.err.println("Width: " + width + " Height: " + height + " nbSlices: " + nbSlices  + " Length: " + length);
+            e.printStackTrace();
+        }
+
+        imgArray = new int[length];
+
         imgArrayModifier(img);
-        
+
     }
-    
+
     /**
      * Creates a new instance of Counter3D.
      *
@@ -103,7 +112,7 @@ public class Counter3D {
         this(img, thr, 1, img.getWidth()*img.getHeight()*img.getNSlices(), false, false);
         sizeFilter=false;
     }
-    
+
     /**
      * Creates a new instance of Counter3D
      *
@@ -113,7 +122,7 @@ public class Counter3D {
         this(img, 0, 1, img.getWidth()*img.getHeight()*img.getNSlices(), false, false);
         sizeFilter=false;
     }
-    
+
     /**
      * Creates a new instance of Counter3D.
      *
@@ -138,21 +147,21 @@ public class Counter3D {
         if (length!=img.length) throw new IllegalArgumentException("The image array length differs from the given image dimensions");
         this.title=title;
         this.cal=cal;
-        
+
         this.thr=thr;
         minSize=min;
         maxSize=max;
         sizeFilter=true;
         this.exclude=exclude;
         this.redirect=redirect;
-        
+
         nbObj=length;
-        
+
         imgArray=img;
-                
+
         imgArrayModifier();
     }
-    
+
     /**
      * Creates a new instance of Counter3D.
      *
@@ -168,8 +177,8 @@ public class Counter3D {
         this(img, title, width, height, nbSlices, thr, 1, width*height*nbSlices, false, false, cal);
         sizeFilter=false;
     }
-    
-    
+
+
     /**
      * Creates a new instance of Counter3D.
      *
@@ -184,7 +193,7 @@ public class Counter3D {
         this(img, title, width, height, nbSlices, thr, 1, width*height*nbSlices, false, false, new Calibration());
         sizeFilter=false;
     }
-    
+
     /**
      * Creates a new instance of Counter3D.
      *
@@ -199,7 +208,7 @@ public class Counter3D {
         this(img, title, width, height, nbSlices, 0, 1, width*height*nbSlices, false, false, cal);
         sizeFilter=false;
     }
-    
+
     /**
      * Creates a new instance of Counter3D.
      *
@@ -213,7 +222,7 @@ public class Counter3D {
         this(img, title, width, height, nbSlices, 0, 1, width*height*nbSlices, false, false, new Calibration());
         sizeFilter=false;
     }
-    
+
     /** Generates the connexity analysis.
      */
     private void findObjects() {
@@ -225,7 +234,7 @@ public class Counter3D {
         int neigbNb=0;
         int pos, currPixID;
         int neigbX, neigbY, neigbZ;
-        
+
         long start=System.currentTimeMillis();
         /*
          Finding the structures:
@@ -237,9 +246,9 @@ public class Counter3D {
          *2-The minimum is not currID: we continue an already existing structure
          *Each time a new pixel is tagged, a counter of pixels in the current tag is incremented.
          */
-                
+
         objID=new int[length];
-        
+
         for (int z=1; z<=nbSlices; z++){
             for (int y=0; y<height; y++){
                 for (int x=0; x<width; x++){
@@ -257,10 +266,10 @@ public class Counter3D {
             IJ.showProgress(z, nbSlices);
         }
         IJ.showStatus("");
-        
+
         IDcount=new int[currID];
         for (int i=0; i<length; i++) IDcount[objID[i]]++;
-        
+
         IDisAtEdge=new boolean[currID];
         Arrays.fill(IDisAtEdge, false);
         /*
@@ -273,7 +282,7 @@ public class Counter3D {
         isSurf=new boolean[length];
         currPos=0;
         minID=1;
-                
+
         for (int z=1; z<=nbSlices; z++){
             for (int y=0; y<height; y++){
                 for (int x=0; x<width; x++){
@@ -318,7 +327,7 @@ public class Counter3D {
                                 }
                             }
                         }
-                        
+
                         //Check if the current particle is touching an edge
                         if(x==0 || y==0 || x==width-1 || y==height-1 || (nbSlices!=1 && (z==1 || z==nbSlices))) IDisAtEdge[minID]=true;
                     }
@@ -329,9 +338,9 @@ public class Counter3D {
             IJ.showProgress(z, nbSlices);
         }
         IJ.showStatus("");
-        
+
         int newCurrID=0;
-        
+
         //Renumbering of all the found objects and update of their respective number of pixels while filtering based on the number of pixels
         for (int i=1; i<IDcount.length; i++){
             if ((IDcount[i]!=0 && IDcount[i]>=minSize && IDcount[i]<=maxSize)&& (!exclude || !(exclude && IDisAtEdge[i]))){
@@ -346,25 +355,25 @@ public class Counter3D {
             IJ.showProgress(i, currID);
         }
         IJ.showStatus("");
-        
+
         if (redirect) prepareImgArrayForRedirect();
         if (showMaskedImg) buildImg(imgArray, null, "Masked image for "+title, false, false, false, 0, 0).show();
-        
+
         nbObj=newCurrID;
         foundObjects=true;
     }
-    
+
     /** Generates the objects list.
      */
     public void getObjects(){
         if (!foundObjects) findObjects();
-        
+
         if (!getObjects){
             obj=new Vector<Object3D>();
 
             for (int i=0; i<nbObj; i++) obj.add(new Object3D(IDcount[i+1], cal));
             IDcount=null;
-            
+
             int currPos=0;
             for (int z=1; z<=nbSlices; z++){
                 for (int y=0; y<height; y++){
@@ -394,7 +403,7 @@ public class Counter3D {
         }
         getObjects=true;
     }
-    
+
     /**
      * Returns the object at the provided index, as an Object3D
      * @param index the index of the object to return
@@ -405,9 +414,9 @@ public class Counter3D {
         if (index<0 || index>=nbObj) return null;
         return (Object3D) obj.get(index);
     }
-    
+
     /**
-     * Add the provided Object3D to the list 
+     * Add the provided Object3D to the list
      * @param object Object3D to add
      */
     public void addObject(Object3D object){
@@ -415,7 +424,7 @@ public class Counter3D {
         obj.add(object);
         nbObj++;
     }
-    
+
     /**
      * Removes the Object3D stored at the provided index. Does nothing if index is out of bounds.
      * @param index index of the Object3D to be removed
@@ -438,7 +447,7 @@ public class Counter3D {
         if (!getObjects) getObjects();
         return obj;
     }
-    
+
     /**
      * Returns the objects map.
      * @param drawNb should be true if numbers have to be drawn at each coordinate stored in cenArray (boolean).
@@ -449,7 +458,7 @@ public class Counter3D {
         if (!getCentroid) populateCentroid();
         return buildImg(objID, coord2imgArray(centroid), "Objects map of "+title, false, drawNb, true, 0, fontSize);
     }
-    
+
     /**
      * Returns the objects map.
      *
@@ -469,13 +478,13 @@ public class Counter3D {
         if (!getObjects) getObjects();
         return objID;
     }
-    
+
     /** Generates and fills the "centreOfMass" array.
      */
     private void populateCentreOfMass(){
         if (!getObjects) getObjects();
         centreOfMass=new float[obj.size()][3];
-        
+
         for (int i=0; i<obj.size(); i++){
             Object3D currObj=(Object3D) obj.get(i);
             float [] tmp=currObj.c_mass;
@@ -483,7 +492,7 @@ public class Counter3D {
         }
         getCentreOfMass=true;
     }
-    
+
     /**
      * Returns the centres of masses' list.
      *
@@ -493,7 +502,7 @@ public class Counter3D {
         if (!getCentreOfMass) populateCentreOfMass();
         return centreOfMass;
     }
-    
+
      /**
      * Returns the centres of masses' map.
      * @param drawNb should be true if numbers have to be drawn at each coordinate stored in cenArray (boolean).
@@ -506,7 +515,7 @@ public class Counter3D {
         int[] array=coord2imgArray(centreOfMass);
         return buildImg(array, array, "Centres of mass map of "+title, true, drawNb, whiteNb, dotSize, fontSize);
     }
-    
+
     /**
      * Returns the centres of masses' map.
      *
@@ -517,13 +526,13 @@ public class Counter3D {
         int[] array=coord2imgArray(centreOfMass);
         return buildImg(array, null, "Centres of mass map of "+title, true, false, false, 5, 0);
     }
-     
+
     /** Generates and fills the "centroid" array.
      */
     private void populateCentroid(){
         if (!getObjects) getObjects();
         centroid=new float[obj.size()][3];
-        
+
         for (int i=0; i<obj.size(); i++){
             Object3D currObj=(Object3D) obj.get(i);
             float [] tmp=currObj.centroid;
@@ -531,7 +540,7 @@ public class Counter3D {
         }
         getCentroid=true;
     }
-    
+
     /**
      * Returns the centroïds' list.
      *
@@ -541,7 +550,7 @@ public class Counter3D {
         if (!getCentroid) populateCentroid();
         return centroid;
     }
-    
+
     /**
      * Returns the centroïds' map.
      * @param drawNb should be true if numbers have to be drawn at each coordinate stored in cenArray (boolean).
@@ -554,7 +563,7 @@ public class Counter3D {
         int[] array=coord2imgArray(centroid);
         return buildImg(array, array, "Centroids map of "+title, true, drawNb, whiteNb, dotSize, fontSize);
     }
-    
+
     /**
      * Returns the centroïds' map.
      *
@@ -565,17 +574,17 @@ public class Counter3D {
         int[] array=coord2imgArray(centroid);
         return buildImg(array, null, "Centroids map of "+title, true, false, false, 5, 0);
     }
-    
+
     /** Generates and fills the "surface" array.
      */
     private void populateSurfList(){
         if (!getObjects) getObjects();
-        
+
         surfList=new int[length];
         for (int i=0; i<length; i++) surfList[i]=isSurf[i]?objID[i]:0;
         getSurfList=true;
     }
-    
+
     /**
      * Returns the surface pixels' list.
      *
@@ -585,14 +594,14 @@ public class Counter3D {
         if (!getSurfList) populateSurfList();
         return surfList;
     }
-    
+
     /** Generates and fills the "surfArray" array.
      */
     private void populateSurfPixCoord(){
         int index=0;
-        
+
         surfCoord=new int[nbSurfPix][4];
-        
+
         for (int i=0; i<nbObj; i++){
             Object3D currObj=(Object3D) obj.get(i);
             for (int j=0; j<currObj.surf_size; j++){
@@ -602,7 +611,7 @@ public class Counter3D {
             }
         }
     }
-    
+
     /**
      * Returns the surface pixels coordinates' list.
      *
@@ -612,7 +621,7 @@ public class Counter3D {
         if (!getSurfCoord) populateSurfPixCoord();
         return surfCoord;
     }
-    
+
     /**
      * Returns the surface pixels' map.
      * @param drawNb should be true if numbers have to be drawn at each coordinate stored in cenArray (boolean).
@@ -624,7 +633,7 @@ public class Counter3D {
         if (!getCentroid) populateCentroid();
         return buildImg(surfList, coord2imgArray(centroid), "Surface map of "+title, false, drawNb, whiteNb, 0, fontSize);
     }
-    
+
     /**
      * Returns the surface pixels' map.
      *
@@ -634,7 +643,7 @@ public class Counter3D {
         if (!getSurfList) populateSurfList();
         return buildImg(surfList, null, "Surface map of "+title, false, false, false, 0, 0);
     }
-           
+
     /** Transforms a coordinates array ([ID][0:x, 1:y, 3:z]) to a linear array containing all pixels one next to the other.
      *
      *@return the linear array as an integer array.
@@ -644,7 +653,7 @@ public class Counter3D {
         for (int i=0; i<coord.length; i++)array[offset((int) coord[i][0], (int) coord[i][1], (int) coord[i][2])]=i+1;
         return array;
     }
-    
+
     /** Set to zero pixels below the threshold in the "imgArray" arrays.
      */
     private void imgArrayModifier(ImagePlus img){
@@ -668,7 +677,7 @@ public class Counter3D {
             return;
         }
     }
-    
+
     /** Set to zero pixels below the threshold in the "imgArray" arrays.
      */
     private void imgArrayModifier(){
@@ -689,7 +698,7 @@ public class Counter3D {
             return;
         }
     }
-    
+
     private void prepareImgArrayForRedirect(){
         int index=0;
         ImagePlus imgRedir=WindowManager.getImage(Prefs.get("3D-OC-Options_redirectTo.string", "none"));
@@ -709,7 +718,7 @@ public class Counter3D {
         }
         if (closeImg) imgRedir.close();
     }
-    
+
     /** Returns an ResultsTable containing statistics on objects:
      * <ul>
      * <li>Volume and Surface: number of pixel forming the structures and at its surface respectively.</li>
@@ -726,22 +735,22 @@ public class Counter3D {
         if (!getObjects) getObjects();
         float calXYZ=(float) (cal.pixelWidth*cal.pixelHeight*cal.pixelDepth);
         String unit=cal.getUnit();
-        
+
         String[] header={"Volume ("+unit+"^3)", "Surface ("+unit+"^2)", "Nb of obj. voxels", "Nb of surf. voxels", "IntDen", "Mean", "StdDev", "Median", "Min", "Max", "X", "Y", "Z", "Mean dist. to surf. ("+unit+")", "SD dist. to surf. ("+unit+")", "Median dist. to surf. ("+unit+")", "XM", "YM", "ZM", "BX", "BY", "BZ", "B-width", "B-height", "B-depth"};
         ResultsTable rt;
-        
+
         if (newRT){
             rt=new ResultsTable();
         }else{
             rt=ResultsTable.getResultsTable();
             rt.reset();
         }
-        
+
         for (int i=0; i<header.length; i++) rt.setHeading(i, header[i]);
         for (int i=0; i<nbObj; i++){
             rt.incrementCounter();
             Object3D currObj=(Object3D) obj.get(i);
-            
+
             if (Prefs.get("3D-OC-Options_volume.boolean", true)) rt.setValue("Volume ("+unit+"^3)", i, currObj.size*calXYZ);
             if (Prefs.get("3D-OC-Options_surface.boolean", true)) rt.setValue("Surface ("+unit+"^2)", i, currObj.surf_cal);
             if (Prefs.get("3D-OC-Options_objVox.boolean", true)) rt.setValue("Nb of obj. voxels", i, currObj.size);
@@ -752,26 +761,26 @@ public class Counter3D {
             if (Prefs.get("3D-OC-Options_median.boolean", true)) rt.setValue("Median", i, currObj.median);
             if (Prefs.get("3D-OC-Options_min.boolean", true)) rt.setValue("Min", i, currObj.min);
             if (Prefs.get("3D-OC-Options_max.boolean", true)) rt.setValue("Max", i, currObj.max);
-            
-            
+
+
             if (Prefs.get("3D-OC-Options_centroid.boolean", true)){
                 float[] tmpArray=currObj.centroid;
                 rt.setValue("X", i, tmpArray[0]);
                 rt.setValue("Y", i, tmpArray[1]);
                 if (nbSlices!=1) rt.setValue("Z", i, tmpArray[2]);
             }
-            
+
             if (Prefs.get("3D-OC-Options_meanDist2Surf.boolean", true)) rt.setValue("Mean dist. to surf. ("+unit+")", i, currObj.mean_dist2surf);
             if (Prefs.get("3D-OC-Options_SDDist2Surf.boolean", true)) rt.setValue("SD dist. to surf. ("+unit+")", i, currObj.SD_dist2surf);
             if (Prefs.get("3D-OC-Options_medDist2Surf.boolean", true)) rt.setValue("Median dist. to surf. ("+unit+")", i, currObj.median_dist2surf);
-            
+
             if (Prefs.get("3D-OC-Options_COM.boolean", true)){
                 float[] tmpArray=currObj.c_mass;
                 rt.setValue("XM", i, tmpArray[0]);
                 rt.setValue("YM", i, tmpArray[1]);
                 if (nbSlices!=1) rt.setValue("ZM", i, tmpArray[2]);
             }
-            
+
             if (Prefs.get("3D-OC-Options_BB.boolean", true)){
             int[] tmpArrayInt=currObj.bound_cube_TL;
                 rt.setValue("BX", i, tmpArrayInt[0]);
@@ -782,9 +791,9 @@ public class Counter3D {
                 rt.setValue("B-height", i, currObj.bound_cube_height);
                 if (nbSlices!=1) rt.setValue("B-depth", i, currObj.bound_cube_depth);
             }
-            
+
         }
-        
+
 //        if (newRT){
 //            rt.show("Statistics for "+title);
 //        }else{
@@ -792,13 +801,13 @@ public class Counter3D {
 //        }
         return rt;
     }
-    
+
     /** Returns a summary containing the image name and the number of retrieved objects including the set filter size and threshold.
      */
     public void showSummary(){
         IJ.log(title+": "+nbObj+" objects detected (Size filter set to "+minSize+"-"+maxSize+" voxels, threshold set to: "+thr+").");
     }
-    
+
     /** Returns an ResultsTable containing coordinates of the surface pixels for all objects:
      * <ul>
      * <li>Object ID: current object number.</li>
@@ -807,7 +816,7 @@ public class Counter3D {
      */
     public void showSurfPix(){
         if (!getSurfCoord) populateSurfPixCoord();
-        
+
         String[] header={"Object ID", "X", "Y", "Z"};
         ResultsTable rt=new ResultsTable();
         for (int i=0; i<header.length; i++) rt.setHeading(i, header[i]);
@@ -815,10 +824,10 @@ public class Counter3D {
             rt.incrementCounter();
             for (int j=0; j<4; j++) rt.setValue(j, i, surfCoord[i][j]);
         }
-        
+
         rt.show("Surface pixel coordinates for "+title);
     }
-    
+
     /** Returns the index where to find the informations corresponding to pixel (x, y, z).
      * @param m x coordinate of the pixel.
      * @param n y coordinate of the pixel.
@@ -836,7 +845,7 @@ public class Counter3D {
             }
         }
     }
-    
+
     /** Returns the minimum anterior tag among the 13 previous pixels (4 pixels in 2D).
      * @param initialValue: value to which the 13 (or 4) retrieved values should be compared to
      * @param x coordinate of the current pixel.
@@ -874,7 +883,7 @@ public class Counter3D {
 
         return min;
     }
-    
+
     /** Replaces one object ID by another within the objID array.
      * @param old value to be replaced.
      * @param new value to be replaced by. </P>
@@ -894,7 +903,7 @@ public class Counter3D {
             IDcount[newVal]+=nbFoundPix;
          }
     }
-    
+
     /** Generates the ImagePlus based on Counter3D object width, height and number of slices, the input array and title.
      * @param imgArray containing the pixels intensities (integer array).
      * @param cenArray containing the coordinates of pixels where the labels should be put (integer array).
@@ -910,16 +919,16 @@ public class Counter3D {
         int imgDepth=16;
         float min=imgArray[0];
         float max=imgArray[0];
-        
+
         for (int i=0; i<imgArray.length; i++){
             int currVal=imgArray[i];
             min=Math.min(min, currVal);
             max=Math.max(max, currVal);
         }
-        
+
         if (max<256) imgDepth=8;
         ImagePlus img=NewImage.createImage(title, width, height, nbSlices, imgDepth, 1);
-        
+
         for (int z=1; z<=nbSlices; z++){
             IJ.showStatus("Creating the image...");
             img.setSlice(z);
@@ -941,7 +950,7 @@ public class Counter3D {
             }
         }
         IJ.showStatus("");
-        
+
         index=0;
         if (drawNb && cenArray!=null){
             for (int z=1; z<=nbSlices; z++){
@@ -963,7 +972,7 @@ public class Counter3D {
             }
         }
         IJ.showStatus("");
-        
+
         img.setCalibration(cal);
         img.setDisplayRange(min, max);
         return img;
